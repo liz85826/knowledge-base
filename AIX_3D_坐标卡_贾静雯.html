@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI+X 3D 坐标卡 · 贾静雯</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #0d0d14;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    padding: 30px 20px;
+  }
+
+  .card {
+    width: 900px;
+    background: linear-gradient(135deg, #12121f 0%, #1a1a2e 50%, #16213e 100%);
+    border-radius: 24px;
+    border: 1px solid rgba(120, 100, 255, 0.2);
+    box-shadow: 0 0 60px rgba(90, 70, 200, 0.15), 0 0 0 1px rgba(255,255,255,0.03);
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* 背景装饰 */
+  .card::before {
+    content: '';
+    position: absolute;
+    top: -100px; right: -100px;
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(99, 70, 255, 0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .card::after {
+    content: '';
+    position: absolute;
+    bottom: -60px; left: -60px;
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(0, 180, 200, 0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  /* 顶部标题区 */
+  .header {
+    padding: 36px 48px 28px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    position: relative;
+  }
+  .header-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(99, 70, 255, 0.15);
+    border: 1px solid rgba(99, 70, 255, 0.35);
+    border-radius: 30px;
+    padding: 4px 16px;
+    font-size: 12px;
+    color: #a899ff;
+    letter-spacing: 0.08em;
+    margin-bottom: 16px;
+  }
+  .badge-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #a899ff;
+    box-shadow: 0 0 6px #a899ff;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; } 50% { opacity: 0.4; }
+  }
+
+  .header h1 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.02em;
+    margin-bottom: 8px;
+  }
+  .header h1 span {
+    background: linear-gradient(90deg, #7c5fff, #00c8e0);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .header-meta {
+    display: flex;
+    gap: 24px;
+    font-size: 13px;
+    color: rgba(255,255,255,0.4);
+  }
+  .header-meta strong { color: rgba(255,255,255,0.7); }
+
+  /* 主体三轴区 */
+  .axes-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0;
+  }
+
+  .axis-block {
+    padding: 32px 32px 28px;
+    border-right: 1px solid rgba(255,255,255,0.05);
+    position: relative;
+    overflow: hidden;
+  }
+  .axis-block:last-child { border-right: none; }
+
+  /* 轴线色主题 */
+  .axis-x { --c: #4ecdc4; --c2: #1a7a74; --glow: rgba(78,205,196,0.15); }
+  .axis-ai { --c: #7c5fff; --c2: #4028b8; --glow: rgba(124,95,255,0.15); }
+  .axis-s { --c: #f5a623; --c2: #b87200; --glow: rgba(245,166,35,0.15); }
+
+  .axis-block::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--c), transparent);
+  }
+  .axis-block::after {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 160px; height: 160px;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--glow) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .axis-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 6px;
+    padding: 3px 10px;
+    font-size: 11px;
+    color: var(--c);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    font-weight: 500;
+  }
+  .axis-icon { font-size: 16px; }
+
+  .axis-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 4px;
+  }
+  .axis-subtitle {
+    font-size: 12px;
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 20px;
+    letter-spacing: 0.05em;
+  }
+
+  .axis-position {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-left: 3px solid var(--c);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 14px;
+    color: #e0e0f0;
+    font-weight: 500;
+    line-height: 1.5;
+    margin-bottom: 20px;
+  }
+
+  .axis-items {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .axis-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 13px;
+    color: rgba(255,255,255,0.65);
+    line-height: 1.55;
+  }
+  .item-bullet {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    border: 1.5px solid var(--c);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px;
+    color: var(--c);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .axis-item strong { color: rgba(255,255,255,0.9); }
+
+  /* 进度指示 */
+  .level-bar {
+    margin-top: 20px;
+  }
+  .level-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: rgba(255,255,255,0.35);
+    margin-bottom: 6px;
+  }
+  .level-label span { color: var(--c); font-weight: 600; }
+  .level-track {
+    height: 4px;
+    background: rgba(255,255,255,0.07);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .level-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--c2), var(--c));
+    box-shadow: 0 0 8px var(--c);
+    transition: width 1s ease;
+  }
+
+  /* 对角线区域 */
+  .diagonal-section {
+    margin: 0 48px;
+    padding: 28px 36px;
+    background: rgba(255,255,255,0.025);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 16px;
+    margin-bottom: 28px;
+    position: relative;
+  }
+  .diagonal-section::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(124,95,255,0.2), rgba(78,205,196,0.1), rgba(245,166,35,0.15));
+    z-index: -1;
+  }
+
+  .diagonal-title {
+    font-size: 13px;
+    color: rgba(255,255,255,0.4);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .diagonal-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.1), transparent);
+  }
+
+  .diagonal-text {
+    font-size: 15px;
+    color: rgba(255,255,255,0.85);
+    line-height: 1.8;
+    font-family: 'Noto Serif SC', serif;
+  }
+  .diagonal-text em {
+    font-style: normal;
+    background: linear-gradient(90deg, #7c5fff, #4ecdc4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 600;
+  }
+
+  /* 三轴动态融合图 */
+  .fusion-section {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 32px;
+    padding: 0 48px 28px;
+  }
+
+  .fusion-axis {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .fusion-node {
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    position: relative;
+  }
+  .fusion-node.x-node {
+    background: radial-gradient(circle, rgba(78,205,196,0.25) 0%, rgba(78,205,196,0.05) 100%);
+    border: 2px solid #4ecdc4;
+    box-shadow: 0 0 20px rgba(78,205,196,0.3);
+  }
+  .fusion-node.ai-node {
+    background: radial-gradient(circle, rgba(124,95,255,0.25) 0%, rgba(124,95,255,0.05) 100%);
+    border: 2px solid #7c5fff;
+    box-shadow: 0 0 20px rgba(124,95,255,0.3);
+  }
+  .fusion-node.s-node {
+    background: radial-gradient(circle, rgba(245,166,35,0.25) 0%, rgba(245,166,35,0.05) 100%);
+    border: 2px solid #f5a623;
+    box-shadow: 0 0 20px rgba(245,166,35,0.3);
+  }
+  .fusion-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.7);
+    text-align: center;
+  }
+  .fusion-sub {
+    font-size: 11px;
+    color: rgba(255,255,255,0.35);
+    text-align: center;
+    max-width: 80px;
+    line-height: 1.4;
+  }
+
+  .fusion-arrow {
+    color: rgba(255,255,255,0.2);
+    font-size: 20px;
+    padding-bottom: 30px;
+  }
+
+  .fusion-center {
+    width: 100px; height: 100px;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, rgba(78,205,196,0.4), rgba(124,95,255,0.5), rgba(245,166,35,0.4), rgba(78,205,196,0.4));
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+    box-shadow: 0 0 40px rgba(124,95,255,0.3);
+    animation: spin 8s linear infinite;
+    padding-bottom: 30px;
+  }
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  .fusion-center-inner {
+    width: 78px; height: 78px;
+    border-radius: 50%;
+    background: #1a1a2e;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    animation: spin-reverse 8s linear infinite;
+  }
+  @keyframes spin-reverse {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(-360deg); }
+  }
+  .fusion-center-text {
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+    text-align: center;
+    line-height: 1.3;
+    letter-spacing: 0.05em;
+  }
+  .fusion-center-sub {
+    font-size: 9px;
+    color: rgba(255,255,255,0.4);
+    margin-top: 2px;
+    letter-spacing: 0.05em;
+  }
+
+  /* 底部 */
+  .footer {
+    padding: 20px 48px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+  .footer-left {
+    font-size: 12px;
+    color: rgba(255,255,255,0.3);
+  }
+  .footer-right {
+    display: flex;
+    gap: 8px;
+  }
+  .tag-pill {
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+  }
+  .tag-green { background: rgba(78,205,196,0.1); color: #4ecdc4; border: 1px solid rgba(78,205,196,0.25); }
+  .tag-purple { background: rgba(124,95,255,0.1); color: #a899ff; border: 1px solid rgba(124,95,255,0.25); }
+  .tag-orange { background: rgba(245,166,35,0.1); color: #f5a623; border: 1px solid rgba(245,166,35,0.25); }
+
+  /* 分隔线 */
+  .divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.07), transparent);
+    margin: 0 48px 28px;
+  }
+</style>
+</head>
+<body>
+<div class="card">
+
+  <!-- 顶部标题 -->
+  <div class="header">
+    <div class="header-badge">
+      <span class="badge-dot"></span>
+      AI+X Elite 20 · C2S 坐标定位卡
+    </div>
+    <h1>贾静雯的 <span>AI+X 3D 定位</span></h1>
+    <div class="header-meta">
+      <span><strong>姓名</strong> 贾静雯</span>
+      <span><strong>学号</strong> 2024105220102</span>
+      <span><strong>提交日期</strong> 2026 年 4 月 22 日</span>
+      <span><strong>专业赛道</strong> 审计学 × AI 共生智能</span>
+    </div>
+  </div>
+
+  <!-- 三轴主体 -->
+  <div class="axes-grid">
+
+    <!-- X 轴 -->
+    <div class="axis-block axis-x">
+      <div class="axis-tag">
+        <span class="axis-icon">🎯</span>
+        X · 领域
+      </div>
+      <div class="axis-title">审计学</div>
+      <div class="axis-subtitle">Audit & Assurance</div>
+
+      <div class="axis-position">
+        正在从「背诵准则」<br>觉醒为「风险建模者」
+      </div>
+
+      <ul class="axis-items">
+        <li class="axis-item">
+          <span class="item-bullet">①</span>
+          <span><strong>核心语言：</strong>控制测试、实质性程序、职业怀疑、穿行测试</span>
+        </li>
+        <li class="axis-item">
+          <span class="item-bullet">②</span>
+          <span><strong>关键问题：</strong>风险如何从业务前端传导至财务报表后端？</span>
+        </li>
+        <li class="axis-item">
+          <span class="item-bullet">③</span>
+          <span><strong>品味形成：</strong>人机分工边界——职业怀疑不可外包，数据跑批可外包</span>
+        </li>
+        <li class="axis-item">
+          <span class="item-bullet">④</span>
+          <span><strong>下一里程：</strong>销售与收款循环大作业中实践人机分工决策矩阵</span>
+        </li>
+      </ul>
+
+      <div class="level-bar">
+        <div class="level-label">X 轴成熟度<span>L1 建模中 · 70%</span></div>
+        <div class="level-track"><div class="level-fill" style="width:70%"></div></div>
+      </div>
+    </div>
+
+    <!-- AI 轴 -->
+    <div class="axis-block axis-ai">
+      <div class="axis-tag">
+        <span class="axis-icon">⚡</span>
+        AI · 杠杆
+      </div>
+      <div class="axis-title">工具矩阵</div>
+      <div class="axis-subtitle">Leverage Arsenal</div>
+
+      <div class="axis-position">
+        能区分高效指令与低效指令<br>掌握「概念回路人主导，程序回路 AI 主导」
+      </div>
+
+      <ul class="axis-items">
+        <li class="axis-item">
+          <span class="item-bullet">✦</span>
+          <span><strong>提示词：</strong>术语体系对齐指令（「翻译成L1的实体-关系语言」）</span>
+        </li>
+        <li class="axis-item">
+          <span class="item-bullet">✦</span>
+          <span><strong>角色扮演：</strong>让AI扮演「论文作者」审视初稿，发现「只描述痛没有理论化痛」</span>
+        </li>
+        <li class="axis-item">
+          <span class="item-bullet">✦</span>
+          <span><strong>工作流：</strong>我出要素内容 → AI 按 KSTAR 格式排版 → 我校验逻辑</span>
+        </li>
+        <li class="axis-item">
+          <span class="item-bullet">✦</span>
+          <span><strong>待延长：</strong>开发「审计智能分工助手」微应用（Q1/Q2/Q3 决策树）</span>
+        </li>
+      </ul>
+
+      <div class="level-bar">
+        <div class="level-label">AI 轴成熟度<span>L2 协同中 · 55%</span></div>
+        <div class="level-track"><div class="level-fill" style="width:55%"></div></div>
+      </div>
+    </div>
+
+    <!-- S 轴 -->
+    <div class="axis-block axis-s">
+      <div class="axis-tag">
+        <span class="axis-icon">🪞</span>
+        S · 自我
+      </div>
+      <div class="axis-title">反思系统</div>
+      <div class="axis-subtitle">Self-Modeling</div>
+
+      <div class="axis-position">
+        从「强制复盘」焦虑<br>设计出「微反思 + 周期收敛」习惯
+      </div>
+
+      <ul class="axis-items">
+        <li class="axis-item">
+          <span class="item-bullet">S</span>
+          <span><strong>Neoskill①</strong> 术语对齐：学科黑话 ↔ 理论语言的实时映射</span>
+        </li>
+        <li class="axis-item">
+          <span class="item-bullet">S</span>
+          <span><strong>Neoskill②</strong> 反幻觉校验：AI细节立刻Ctrl+F原文核对</span>
+        </li>
+        <li class="axis-item">
+          <span class="item-bullet">S</span>
+          <span><strong>反思习惯：</strong>60 秒语音闪念 → 手机备忘录记录「最别扭的数据点」</span>
+        </li>
+        <li class="axis-item">
+          <span class="item-bullet">S</span>
+          <span><strong>KSTAR 使用：</strong>证据真实优先，先积累行为数据再做结构化复盘</span>
+        </li>
+      </ul>
+
+      <div class="level-bar">
+        <div class="level-label">S 轴成熟度<span>L3 萌发中 · 45%</span></div>
+        <div class="level-track"><div class="level-fill" style="width:45%"></div></div>
+      </div>
+    </div>
+
+  </div><!-- /axes-grid -->
+
+  <!-- 融合图 -->
+  <div class="divider"></div>
+  <div class="fusion-section">
+    <div class="fusion-axis">
+      <div class="fusion-node x-node">🎯</div>
+      <div class="fusion-label">X 轴</div>
+      <div class="fusion-sub">审计风险<br>传导建模</div>
+    </div>
+    <div class="fusion-arrow">×</div>
+    <div class="fusion-axis">
+      <div class="fusion-node ai-node">⚡</div>
+      <div class="fusion-label">AI 轴</div>
+      <div class="fusion-sub">人机分工<br>决策矩阵</div>
+    </div>
+    <div class="fusion-arrow">×</div>
+    <div class="fusion-axis">
+      <div class="fusion-node s-node">🪞</div>
+      <div class="fusion-label">S 轴</div>
+      <div class="fusion-sub">微反思<br>术语校验</div>
+    </div>
+    <div class="fusion-arrow">=</div>
+    <div>
+      <div class="fusion-center">
+        <div class="fusion-center-inner">
+          <div class="fusion-center-text">ELITE<br>对角线</div>
+          <div class="fusion-center-sub">三轴共振</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 对角线洞察 -->
+  <div class="diagonal-section">
+    <div class="diagonal-title">🔥 对角线洞察 · 你的 Elite 轨迹</div>
+    <div class="diagonal-text">
+      当你用 <em>L1 风险传导模型</em> 重构审计逻辑（X轴），
+      设计 <em>Q1/Q2/Q3 人机分工决策树</em> 内化协作边界（AI轴），
+      并用 <em>60 秒语音闪念</em> 固化元认知习惯（S轴）——
+      三轴同时移动的那一刻，你不是在学审计学，也不是在学 AI，
+      你正在成为 <em>AI 时代审计思维的建构者</em>。
+    </div>
+  </div>
+
+  <!-- 底部 -->
+  <div class="footer">
+    <div class="footer-left">AI+X 3D 坐标卡 · 由 WorkBuddy 生成 · 2026.05.03</div>
+    <div class="footer-right">
+      <span class="tag-pill tag-green">#风险建模</span>
+      <span class="tag-pill tag-purple">#人机协同</span>
+      <span class="tag-pill tag-orange">#元认知觉醒</span>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
